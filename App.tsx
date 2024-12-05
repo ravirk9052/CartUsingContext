@@ -1,118 +1,103 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import {NavigationContainer} from '@react-navigation/native';
+import React, {useState} from 'react';
+import cartContext from './AppProvider';
+import CartPage from './src/Screens/CartPage';
+import CustomBottomTab from './src/Screens/CustomBottomTab';
+import HomeScreen from './src/Screens/HomeScreen';
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
-
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
-
-type SectionProps = PropsWithChildren<{
+const Tabs = createBottomTabNavigator();
+export interface IItemObj {
+  discountPercentage: number;
+  discountedTotal: number;
+  id: number;
+  itemCount: number;
+  price: number;
+  quantity: number;
+  thumbnail: string;
   title: string;
-}>;
-
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
+  total: number;
 }
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+export interface IItemObject {
+  item: {
+    discountPercentage: number;
+    discountedTotal: number;
+    id: number;
+    itemCount: number;
+    price: number;
+    quantity: number;
+    thumbnail: string;
+    title: string;
+    total: number;
+  };
+}
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+const App = () => {
+  const [count, setCount] = useState(1);
+  const [addedCartdata, setCartData] = useState([]);
+
+  const onIncrement = (count: number) => {
+    setCount(count + 1);
+  };
+
+  const onDecrement = (count: number) => {
+    setCount(count - 1);
+  };
+
+  const onAddCartData = (item: IItemObj) => {
+    // console.log('28', item);
+    if (item.itemCount > 0) {
+      setCartData(prevState => {
+        const itemIndex = prevState.findIndex(
+          cartItem => cartItem.id === item.id,
+        );
+
+        if (itemIndex !== -1) {
+          const updatedCartData = [...prevState];
+          const existingItem = updatedCartData[itemIndex];
+
+          if (existingItem.itemCount !== item.itemCount) {
+            existingItem.itemCount = item.itemCount;
+          }
+
+          return updatedCartData;
+        } else {
+          return [...prevState, item];
+        }
+      });
+    } else if (item.itemCount == 0) {
+      setCartData(prevState => {
+        const updatedCartData = prevState.filter(
+          cartItem => cartItem.id !== item.id,
+        );
+        return updatedCartData;
+      });
+    }
   };
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+    <>
+      <cartContext.Provider
+        value={{
+          count,
+          onIncrement: onIncrement,
+          onDecrement: onDecrement,
+          addedCartdata,
+          onAddCartData: onAddCartData,
+        }}>
+        <NavigationContainer>
+          <Tabs.Navigator
+            screenOptions={{headerShown: false}}
+            initialRouteName="HomeScreen"
+            tabBar={props => <CustomBottomTab {...props} />}>
+            <Tabs.Screen name="HomeScreen" component={HomeScreen} />
+            <Tabs.Screen name="CartPage" component={CartPage} />
+          </Tabs.Navigator>
+        </NavigationContainer>
+      </cartContext.Provider>
+    </>
   );
-}
-
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-});
+};
 
 export default App;
